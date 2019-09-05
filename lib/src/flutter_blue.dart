@@ -58,13 +58,9 @@ class FlutterBlue {
   }
 
   Stream<String> get getRssi async* {
-    yield await _channel
-        .invokeMethod('getRssi')
-        .then((s) => BluetoothState.values[s.state.value]);
+    yield await _channel.invokeMethod('getRssi').then((s) => s.state.value);
 
-    yield* _rssiChannel
-        .receiveBroadcastStream()
-        .map((s) => BluetoothState.values[s.state.value]);
+    yield* _rssiChannel.receiveBroadcastStream().map((s) => s.state.value);
   }
 
   Future<List<BluetoothDevice>> get connectedDevices {

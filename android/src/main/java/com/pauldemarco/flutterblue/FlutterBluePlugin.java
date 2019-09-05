@@ -141,8 +141,8 @@ public class FlutterBluePlugin implements MethodCallHandler, RequestPermissionsR
 
             case "getRssi":
             {
-                result.success(BluetoothDevice.EXTRA_RSSI,Short.MIN_VALUE);
-                log(LogLevel.EMERGENCY, "=====RSSI from Library:======== " + BluetoothDevice.EXTRA_RSSI,Short.MIN_VALUE);
+                result.success(BluetoothDevice.EXTRA_RSSI);
+                log(LogLevel.EMERGENCY, "=====RSSI from Library:======== " + BluetoothDevice.EXTRA_RSSI);
                 break;
             }
 

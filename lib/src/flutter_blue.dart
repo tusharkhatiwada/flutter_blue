@@ -7,6 +7,7 @@ part of flutter_blue;
 class FlutterBlue {
   final MethodChannel _channel = const MethodChannel('$NAMESPACE/methods');
   final EventChannel _stateChannel = const EventChannel('$NAMESPACE/state');
+  final EventChannel _rssiChannel = const EventChannel('$NAMESPACE/getRssi');
   final StreamController<MethodCall> _methodStreamController =
       new StreamController.broadcast(); // ignore: close_sinks
   Stream<MethodCall> get _methodStream => _methodStreamController
@@ -59,11 +60,11 @@ class FlutterBlue {
   Stream<String> get getRssi async* {
     yield await _channel
         .invokeMethod('getRssi')
-        .then((s) => print("===RSSI Dart====: $s"));
+        .then((s) => BluetoothState.values[s.state.value]);
 
-    yield* _stateChannel
+    yield* _rssiChannel
         .receiveBroadcastStream()
-        .map((s) => print("===RSSI Dart State====: $s"));
+        .map((s) => BluetoothState.values[s.state.value]);
   }
 
   Future<List<BluetoothDevice>> get connectedDevices {

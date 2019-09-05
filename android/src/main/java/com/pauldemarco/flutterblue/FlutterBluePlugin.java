@@ -64,6 +64,7 @@ public class FlutterBluePlugin implements MethodCallHandler, RequestPermissionsR
     private final Activity activity;
     private final MethodChannel channel;
     private final EventChannel stateChannel;
+    private final EventChannel rssiChannel;
     private final BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
     private final Map<String, BluetoothGatt> mGattServers = new HashMap<>();
@@ -86,10 +87,12 @@ public class FlutterBluePlugin implements MethodCallHandler, RequestPermissionsR
         this.activity = r.activity();
         this.channel = new MethodChannel(registrar.messenger(), NAMESPACE+"/methods");
         this.stateChannel = new EventChannel(registrar.messenger(), NAMESPACE+"/state");
+        this.rssiChannel = new EventChannel(registrar.messenger(), NAMESPACE+"/getRssi");
         this.mBluetoothManager = (BluetoothManager) r.activity().getSystemService(Context.BLUETOOTH_SERVICE);
         this.mBluetoothAdapter = mBluetoothManager.getAdapter();
         channel.setMethodCallHandler(this);
         stateChannel.setStreamHandler(stateHandler);
+        rssiChannel.setStreamHandler(rssiHandler);
     }
 
     @Override
@@ -133,6 +136,13 @@ public class FlutterBluePlugin implements MethodCallHandler, RequestPermissionsR
                     p.setState(Protos.BluetoothState.State.UNAUTHORIZED);
                 }
                 result.success(p.build().toByteArray());
+                break;
+            }
+
+            case "getRssi":
+            {
+                result.success(BluetoothDevice.EXTRA_RSSI,Short.MIN_VALUE);
+                log(LogLevel.EMERGENCY, "=====RSSI from Library:======== " + BluetoothDevice.EXTRA_RSSI,Short.MIN_VALUE);
                 break;
             }
 
@@ -590,6 +600,34 @@ public class FlutterBluePlugin implements MethodCallHandler, RequestPermissionsR
         public void onListen(Object o, EventChannel.EventSink eventSink) {
             sink = eventSink;
             IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+            activity.registerReceiver(mReceiver, filter);
+        }
+
+        @Override
+        public void onCancel(Object o) {
+            sink = null;
+            activity.unregisterReceiver(mReceiver);
+        }
+    };
+    private final StreamHandler rssiHandler = new StreamHandler() {
+        private EventSink sink;
+
+        private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                final String action = intent.getAction();
+
+                if(BluetoothDevice.ACTION_FOUND.equals(action)) {
+                    int rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI,Short.MIN_VALUE);
+                    sink.success(rssi);
+                }
+            }
+        };
+
+        @Override
+        public void onListen(Object o, EventChannel.EventSink eventSink) {
+            sink = eventSink;
+            IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
             activity.registerReceiver(mReceiver, filter);
         }
 
